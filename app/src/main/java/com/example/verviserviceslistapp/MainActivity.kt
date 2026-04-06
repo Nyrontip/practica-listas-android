@@ -1,6 +1,7 @@
 package com.example.verviserviceslistapp
 
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -41,6 +42,7 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 fun MainScreen(){
+    val context = LocalContext.current
     Scaffold(
         modifier = Modifier.fillMaxSize(),
         content = { paddingValues ->
@@ -52,7 +54,9 @@ fun MainScreen(){
                 )
                 LazyColumn {
                     items(services) { service ->
-                        ServiceItem(service = service)
+                        ServiceItem(service = service, onClick = {
+                            Toast.makeText(context, "Seleccionaste: ${service.title}", Toast.LENGTH_SHORT).show()
+                        })
                     }
                 }
             }
@@ -176,13 +180,14 @@ val services = listOf(
 
 
 @Composable
-fun ServiceItem ( service: Service ) {
+fun ServiceItem ( service: Service , onClick: () -> Unit = {}) {
     Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(8.dp),
         shape = RoundedCornerShape(8.dp),
-        elevation = CardDefaults.cardElevation(4.dp)
+        elevation = CardDefaults.cardElevation(4.dp),
+        onClick = onClick
     ) {
         Row(modifier = Modifier.padding(16.dp)) {
             val context = LocalContext.current
