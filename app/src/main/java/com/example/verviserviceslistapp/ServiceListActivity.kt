@@ -40,6 +40,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.verviserviceslistapp.ui.theme.VerviServicesListAppTheme
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.verviserviceslistapp.viewmodel.ServiceListViewModel
 
 class ServiceListActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -47,7 +49,8 @@ class ServiceListActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             VerviServicesListAppTheme {
-                ServiceListScreen()
+                val viewModel: ServiceListViewModel = viewModel()
+                ServiceListScreen(viewModel)
             }
         }
     }
@@ -55,8 +58,9 @@ class ServiceListActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ServiceListScreen() {
+fun ServiceListScreen(viewModel: ServiceListViewModel = viewModel()) {
     val context = LocalContext.current
+    val services = viewModel.getServices()
 
     Scaffold(
         topBar = {
@@ -90,7 +94,7 @@ fun ServiceListScreen() {
         modifier = Modifier.fillMaxSize()
     ) { paddingValues ->
         LazyColumn(modifier = Modifier.padding(paddingValues).padding(12.dp)) {
-            items(serviceSingleton.services) { service ->
+            items(services) { service ->
                 ServiceItem(service = service, onClick = {
                     Toast.makeText(context, "Seleccionaste: ${service.title}", Toast.LENGTH_SHORT).show()
                 })

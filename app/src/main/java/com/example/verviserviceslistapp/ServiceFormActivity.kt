@@ -1,6 +1,5 @@
 package com.example.verviserviceslistapp
 
-import android.net.Uri
 import android.os.Bundle
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -8,7 +7,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -45,10 +43,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,7 +54,8 @@ import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
 import coil.request.ImageRequest
 import com.example.verviserviceslistapp.ui.theme.VerviServicesListAppTheme
-import java.util.Locale
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.verviserviceslistapp.viewmodel.ServiceFormViewModel
 
 class ServiceFormActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,7 +63,8 @@ class ServiceFormActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             VerviServicesListAppTheme {
-                ServiceFormScreen()
+                val viewModel: ServiceFormViewModel = viewModel()
+                ServiceFormScreen(viewModel)
             }
         }
     }
@@ -76,22 +72,14 @@ class ServiceFormActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ServiceFormScreen() {
+fun ServiceFormScreen(viewModel: ServiceFormViewModel = viewModel()) {
     val context = LocalContext.current
-    var title by remember { mutableStateOf("") }
-    var location by remember { mutableStateOf("") }
-    var price by remember { mutableStateOf("") }
-    var applicationCount by remember { mutableStateOf("") }
-    var isUrgent by remember { mutableStateOf(false) }
-    var imageUri by remember { mutableStateOf<Uri?>(null) }
-    var expanded by remember { mutableStateOf(false) }
-    var selectedCategory by remember { mutableStateOf(ServiceType.HOGAR) }
 
     val imagePickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri ->
         if (uri != null) {
-            imageUri = uri
+            viewModel.setImageUri(uri)
         }
     }
 
@@ -116,6 +104,7 @@ fun ServiceFormScreen() {
                             contentDescription = "Atrás",
                             tint = Color.White
                         )
+
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -156,10 +145,10 @@ fun ServiceFormScreen() {
                             .clickable { imagePickerLauncher.launch("image/*") },
                         contentAlignment = Alignment.Center
                     ) {
-                        if (imageUri != null) {
+                        if (viewModel.imageUri.value != null) {
                             AsyncImage(
                                 model = ImageRequest.Builder(context)
-                                    .data(imageUri)
+                                    .data(viewModel.imageUri.value)
                                     .crossfade(true)
                                     .build(),
                                 contentDescription = "Vista previa",
@@ -202,8 +191,8 @@ fun ServiceFormScreen() {
                     Column(modifier = Modifier.padding(16.dp)) {
                         // Título
                         TextField(
-                            value = title,
-                            onValueChange = { title = it },
+                            value = viewModel.title.value,
+                            onValueChange = { viewModel.setTitle(it) },
                             label = { Text("Título del servicio") },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -217,8 +206,8 @@ fun ServiceFormScreen() {
 
                         // Ubicación
                         TextField(
-                            value = location,
-                            onValueChange = { location = it },
+                            value = viewModel.location.value,
+                            onValueChange = { viewModel.setLocation(it) },
                             label = { Text("Ubicación") },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -232,8 +221,8 @@ fun ServiceFormScreen() {
 
                         // Precio
                         TextField(
-                            value = price,
-                            onValueChange = { price = it },
+                            value = viewModel.price.value,
+                            onValueChange = { viewModel.setPrice(it) },
                             label = { Text("Precio") },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -247,8 +236,8 @@ fun ServiceFormScreen() {
 
                         // Cantidad de aplicaciones
                         TextField(
-                            value = applicationCount,
-                            onValueChange = { applicationCount = it.filter { c -> c.isDigit() } },
+                            value = viewModel.applicationCount.value,
+                            onValueChange = { viewModel.setApplicationCount(it) },
                             label = { Text("Cantidad de aplicaciones") },
                             modifier = Modifier
                                 .fillMaxWidth()
@@ -270,8 +259,8 @@ fun ServiceFormScreen() {
                         ) {
                             Text("¿Es urgente?", fontSize = 16.sp)
                             Switch(
-                                checked = isUrgent,
-                                onCheckedChange = { isUrgent = it }
+                                checked = viewModel.isUrgent.value,
+                                onCheckedChange = { viewModel.setIsUrgent(it) }
                             )
                         }
 
@@ -285,7 +274,7 @@ fun ServiceFormScreen() {
                         Card(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { expanded = true },
+                                .clickable { viewModel.setExpanded(true) },
                             shape = RoundedCornerShape(8.dp),
                             colors = CardDefaults.cardColors(
                                 containerColor = MaterialTheme.colorScheme.surfaceVariant
@@ -298,31 +287,22 @@ fun ServiceFormScreen() {
                                     .padding(16.dp)
                             ) {
                                 Text(
-                                    text = selectedCategory.name.replaceFirstChar {
-                                        if (it.isLowerCase()) it.titlecase(
-                                            Locale.ROOT
-                                        ) else it.toString()
-                                    },
+                                    text = viewModel.getCategoryDisplayName(viewModel.selectedCategory.value),
                                     fontSize = 14.sp
                                 )
                                 DropdownMenu(
-                                    expanded = expanded,
-                                    onDismissRequest = { expanded = false }
+                                    expanded = viewModel.expanded.value,
+                                    onDismissRequest = { viewModel.setExpanded(false) }
                                 ) {
                                     ServiceType.entries.forEach { type ->
                                         DropdownMenuItem(
                                             text = {
                                                 Text(
-                                                    type.name.replaceFirstChar {
-                                                        if (it.isLowerCase()) it.titlecase(
-                                                            Locale.ROOT
-                                                        ) else it.toString()
-                                                    }
+                                                    viewModel.getCategoryDisplayName(type)
                                                 )
                                             },
                                             onClick = {
-                                                selectedCategory = type
-                                                expanded = false
+                                                viewModel.setSelectedCategory(type)
                                             }
                                         )
                                     }
@@ -335,30 +315,23 @@ fun ServiceFormScreen() {
                 // Botones de acción
                 Button(
                     onClick = {
-                        if (title.isBlank() || location.isBlank() || price.isBlank() || applicationCount.isBlank()) {
-                            Toast.makeText(
-                                context,
-                                "Completa todos los campos",
-                                Toast.LENGTH_SHORT
-                            ).show()
-                        } else if (imageUri == null) {
-                            Toast.makeText(
-                                context,
-                                "Selecciona una imagen",
-                                Toast.LENGTH_SHORT
-                            ).show()
+                        if (!viewModel.isFormValid()) {
+                            if (viewModel.title.value.isBlank() || viewModel.location.value.isBlank() || 
+                                viewModel.price.value.isBlank() || viewModel.applicationCount.value.isBlank()) {
+                                Toast.makeText(
+                                    context,
+                                    "Completa todos los campos",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            } else {
+                                Toast.makeText(
+                                    context,
+                                    "Selecciona una imagen",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
                         } else {
-                            val newService = Service(
-                                id = System.currentTimeMillis().toString(),
-                                title = title,
-                                location = location,
-                                price = price,
-                                applicationCount = applicationCount.toIntOrNull() ?: 0,
-                                isUrgent = isUrgent,
-                                imageUrl = imageUri.toString(),
-                                category = selectedCategory
-                            )
-                            serviceSingleton.services.add(newService)
+                            viewModel.saveService()
                             Toast.makeText(
                                 context,
                                 "Servicio registrado",
